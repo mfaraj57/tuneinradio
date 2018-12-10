@@ -1,0 +1,223 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: GP3FlashBackup\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: IHAD <JackDaniel@i-have-a-dreambox.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: German\n"
+"X-Poedit-Country: AUSTRIA\n"
+
+msgid "Choose backup location"
+msgstr ""
+
+msgid "FlashBackup is running, please wait..."
+msgstr ""
+
+msgid "Selected Backuplocation:"
+msgstr ""
+
+msgid "Version:\n"
+msgstr ""
+
+msgid ""
+"Developer:\n"
+"  JackDaniel"
+msgstr ""
+
+msgid ""
+"Thanks at the developer of the Binarys:\n"
+"  mechatron"
+msgstr ""
+
+msgid ""
+"Thanks at the developer of the Scripts:\n"
+"  Erim"
+msgstr ""
+
+msgid "Thanks for translation to:\n"
+msgstr ""
+
+msgid "About GP3 FlashBackup"
+msgstr ""
+
+msgid "About..."
+msgstr ""
+
+msgid ""
+"\n"
+"About GP3 FlashBackup Plugin."
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "for select sublist!"
+msgstr ""
+
+msgid "1:1 Flashimage-Backup on HDD, CF, SD, USB or Networkmount"
+msgstr ""
+
+msgid "Start Backup"
+msgstr ""
+
+msgid ""
+"\n"
+"Starts backup from yours Flash-Image."
+msgstr ""
+
+msgid ""
+"\n"
+"Select your backup device."
+msgstr ""
+
+msgid "Advanced Options"
+msgstr ""
+
+msgid ""
+"\n"
+"Advanced options and settings."
+msgstr ""
+
+msgid "Start Backup (for Debug)"
+msgstr ""
+
+msgid ""
+"\n"
+"Starts backup from yours Flash-Image, after finish Telnet will be open for Debug info.\n"
+"ATTENTION: A FlashBackupLog will be creat in /tmp, by problems please post this Log (as a file attachment).\n"
+"With EXIT or OK key the console becomes closed."
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid ""
+"Sorry, your backup destination is not writeable.\n"
+"\n"
+"Please choose another one."
+msgstr ""
+
+msgid ""
+"GP3 FlashBackup successfully done.\n"
+"FlaschBackup close?\n"
+"Backupduration (in minutes): "
+msgstr ""
+
+msgid "GP3 FlashBackup failed."
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Swapsize: "
+msgstr ""
+
+msgid "Backup is running..."
+msgstr ""
+
+msgid ""
+"Sorry your backup destination is not writeable.\n"
+"Please choose an other one."
+msgstr ""
+
+msgid "Selected memory place:"
+msgstr ""
+
+msgid "Select"
+msgstr ""
+
+msgid "Invalid Location"
+msgstr ""
+
+msgid ""
+"There might not be enough Space on the selected Partition.\n"
+"Do you really want to continue?"
+msgstr ""
+
+msgid "GP3 FlashBackup Settings"
+msgstr ""
+
+msgid "GP3 FlashBackup"
+msgstr ""
+
+msgid ""
+"\n"
+"Press OK on your remote control to continue."
+msgstr ""
+
+msgid ""
+"GP3 FlashBackup successfully done.\n"
+"Backupduration (in minutes): "
+msgstr ""
+
+msgid ""
+"GP3 FlashBackup successfully done.\n"
+"FlashBackup Debug-Log createt in /tmp/ as file FlashBackupLog.\n"
+"Backupduration (in minutes): "
+msgstr ""
+
+msgid ""
+"GP3 FlashBackup failed.\n"
+"FlashBackup Debug-Log createt in /tmp/ as file FlashBackupLog."
+msgstr ""
+
+msgid "I do not agree"
+msgstr ""
+
+msgid "I agree"
+msgstr ""
+
+msgid "GP3 FlashBackup Disclaimer"
+msgstr ""
+
+msgid "Disclaimer"
+msgstr ""
+
+msgid ""
+"To create FlashBackups on their own risk!!!\n"
+"To create backups can be dangerous,as well as to flash this.\n"
+"In IhaD Board, there is no support for backup images, and the spread of such backups in the board is prohibited."
+msgstr ""
+
+msgid "Sorry, Disclaimer not accepted !!!"
+msgstr ""
+
+msgid ""
+"\n"
+"Disclaimer from the GP3 FlashBackup Plugin."
+msgstr ""
+
+msgid ""
+"\n"
+"Adjustments for Swap and Enigma 2 update."
+msgstr ""
+
+msgid "Current Swapsize (0 is off): "
+msgstr ""
+
+msgid "Check for Enigma 2 Update after Backup: "
+msgstr ""
+
+msgid ""
+"It is sometimes necessary to disable the Swap function if the backup is done on a network mount!\n"
+"Attention: A working Swap must be active on the box."
+msgstr ""
+
+msgid "Backup in Debug modus is running..."
+msgstr ""
+
+msgid ""
+"\n"
+"Close GP3 FlashBackup with the OK button."
+msgstr ""
+
+msgid "FlashExpander is used,no FlashBackup possible."
+msgstr ""
+
