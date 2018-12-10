@@ -1,0 +1,4 @@
+version:1.0
+kernel:oe2.0
+package:full
+build:18052017
