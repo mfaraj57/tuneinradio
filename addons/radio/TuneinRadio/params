@@ -1,0 +1,12 @@
+plugin_id==plugin.audio.tunein
+section==radio
+subsection==general
+version==1.0.0
+textsize==20
+textcolor==#FFD700
+metadata==False
+fanart==True
+plugin_title==Tunein Radio
+thumbnail==True
+
+playstr==mode=300
