@@ -32,7 +32,7 @@ __tunein__ = tunein.TuneIn('yvcOjvJP', 0, 'en-US', 'mp3,wma,wmpro,wmvideo,wmvoic
 ############################################
 
 ####functions
-
+from Plugins.Extensions.TuneinRadio.lib.pltools import log
 
 
 def showmenu():
@@ -83,7 +83,7 @@ def getlocalstations(namemain,urlmain,page):##movies
 
 
                     
-def getstreams(name,urlmain,page):##series
+def getstreams(name,urlmain,page,image):##series
 
                  
         result = []
@@ -96,7 +96,7 @@ def getstreams(name,urlmain,page):##series
                 #return
             print "result",result
             for stream in result:
-                addDir(name,stream,10,'img/stream.png','',1,link=True)
+                addDir(name,stream,10,image,'',1,link=True)
             
             
                                            
@@ -143,10 +143,13 @@ def readnet(url):
     return None
 def addDir(name, url, mode, iconimage, desc = '', page = '',link=False):
     global list2
+    image=iconimage
+    try:name=name.encode("utf-8","ignore")
+    except:pass
     if not page == '':
-        u = module_path + '?url=' + urllib.quote_plus(url) + '&mode=' + str(mode) + '&name=' + urllib.quote_plus(name) + '&desc=' + urllib.quote_plus(desc) + '&page=' + str(page)
+        u = module_path + '?url=' + urllib.quote_plus(url) + '&mode=' + str(mode) + '&name=' + urllib.quote_plus(name) + '&desc=' + urllib.quote_plus(desc) + '&page=' + str(page)+ '&image=' + urllib.quote_plus(image)
     else:
-        u = module_path + '?url=' + urllib.quote_plus(url) + '&mode=' + str(mode) + '&name=' + urllib.quote_plus(name) + '&desc=' + urllib.quote_plus(desc) + '&page='
+        u = module_path + '?url=' + urllib.quote_plus(url) + '&mode=' + str(mode) + '&name=' + urllib.quote_plus(name) + '&desc=' + urllib.quote_plus(desc) + '&page='+ '&image=' + urllib.quote_plus(image)
     if link == True:
         list2.append((name,
          url,
@@ -171,13 +174,7 @@ def trace_error():
         pass
 
 
-def log(txt):
-    try:
-        afile = open('/tmp/ProhdIPTV_log', 'a')
-        afile.write('\n' + str(txt))
-        afile.close()
-    except:
-        pass
+
 
 
 
@@ -187,13 +184,16 @@ def process_mode(list1 = [], action_param = None,searchtxt=None):
     global list2
     if True:
         
-        log('Start session####################################################')
+        log(" ",'Start session####################################################')
         list2 = []
+        log("action_param",action_param)
         params = get_params(action_param)
+        log("params",params)    
         url = None
         name = None
         mode = None
         page = ''
+        image = '/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/addons/radio/TuneinRadio/icon.png'
         try:
             url = urllib.unquote_plus(params['url'])
         except:
@@ -203,7 +203,10 @@ def process_mode(list1 = [], action_param = None,searchtxt=None):
             name = urllib.unquote_plus(params['name'])
         except:
             pass
-
+        try:
+            image = urllib.unquote_plus(params['image'])
+        except:
+            pass
         try:
             mode = int(params['mode'])
         except:
@@ -228,14 +231,14 @@ def process_mode(list1 = [], action_param = None,searchtxt=None):
              search(url,searchtxt)  
         elif mode == 10:
             print '' + url
-            getstreams(name,url,page)
+            getstreams(name,url,page,image)
         elif mode == 300:
             print '' + url
-            getstreams(name,url,page)
+            getstreams(name,url,page,image)
     else:
         addDir('Error:script error [error 1050]', '', '', '', desc='', page='')
         trace_error()
-    log('End session####################################################')
+    log(" ",'End session####################################################')
     return list2
 
 #print "stations" ,process_mode(list1 = [], action_param = None)
