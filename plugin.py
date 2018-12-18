@@ -3,16 +3,35 @@ from Plugins.Plugin import PluginDescriptor
 from Components.config import config, ConfigIP, ConfigInteger, ConfigDirectory, ConfigSubsection, ConfigSubList, ConfigEnableDisable, ConfigNumber, ConfigText, ConfigSelection, ConfigYesNo, ConfigPassword, getConfigListEntry, configfile
 from Components.ConfigList import ConfigListScreen
 import os
-config.TuneinRadio = ConfigSubsection()
+import gettext
 
+config.TuneinRadio = ConfigSubsection()
+   
 config.TuneinRadio.menuplugin = ConfigEnableDisable(default=False)
 
 config.TuneinRadio.autoupdate = ConfigEnableDisable(default=False)
-config.TuneinRadio.downloadlocation = ConfigText(default='/media/hdd', fixed_size=False)
-config.TuneinRadio.favlocation = ConfigText(default='/etc/TuneinRadio', fixed_size=False)
-       
 
+
+config.TuneinRadio.downloadlocation = ConfigText(default="/media/hdd", fixed_size=False)
+
+
+config.TuneinRadio.favlocation = ConfigText(default='/etc/TuneinRadio', fixed_size=False)
+    
+config.TuneinRadio.images_source = ConfigSelection(default="google", choices = [
+                ("google", _("google")),
+                ("myphotos", "myphotos")
+                ])
 PLUGIN_PATH='/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio'
+# add local language file
+
+TuneinRadio_sp=config.osd.language.value.split("_")
+TuneinRadio_language = TuneinRadio_sp[0]
+if os.path.exists("%s/locale/%s" % (PLUGIN_PATH,TuneinRadio_language)):
+	_=gettext.Catalog('TuneinRadio', '%s/locale' % PLUGIN_PATH,TuneinRadio_sp).gettext
+
+
+
+
 try:
     import socket
     timeout = 25

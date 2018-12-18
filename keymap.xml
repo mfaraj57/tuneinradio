@@ -1,0 +1,7 @@
+<keymap>
+	<map context="TuneinRadioActions">
+
+		<key id="KEY_YELLOW" mapto="addfav" flags="m" />
+		
+	</map>
+</keymap>

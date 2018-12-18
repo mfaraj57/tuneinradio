@@ -60,7 +60,7 @@ def getScale():
 from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmap, MultiContentEntryPixmapAlphaTest
 from Components.config import config, ConfigInteger, ConfigDirectory, ConfigSubsection, ConfigSubList, ConfigEnableDisable, ConfigNumber, ConfigText, ConfigSelection, ConfigYesNo, ConfigPassword, getConfigListEntry, configfile
 from Components.ConfigList import ConfigListScreen
-from .lib.pltools import getversioninfo
+from .lib.pltools import getversioninfo,log
 currversion,enigmaos,currpackage,currbuild= getversioninfo("TuneinRadio")
 def getfreespace(downloadlocation = None):
     if os.path.exists(downloadlocation) == False:
@@ -142,7 +142,7 @@ class MainScreen(Screen):
         self.spinner_running=False
         
         self.color = '#080000'
-
+       
         if dwidth == 1280:
             size_w = 1000
             size_h = 702
@@ -423,7 +423,7 @@ class MainScreen(Screen):
         self.playlist=[]
         self.close_back=None		
         self.piclist=[]
-        self['handlung'] = Label("Please wait... ")
+        self['handlung'] = Label(_("Please wait... "))
         self.startSpinner()
         self['page']=Label()
         self['info'] = Label(str(self.page))
@@ -432,8 +432,8 @@ class MainScreen(Screen):
         
         if not os.path.exists("/tmp/TuneinRadio/"):
              os.makedirs("/tmp/TuneinRadio/")
-        self["Key_green"]=Label("Search")
-        self["Key_blue"]=Label("Download")
+        self["Key_green"]=Label(_("Search"))
+        self["Key_blue"]=Label(_("Download"))
         self["Key_blue"].hide()
         self.data1=[]
         self.data1.append(('',[]))
@@ -445,7 +445,7 @@ class MainScreen(Screen):
         
         if self.param_title=='Favorites'  and self.page==1:
            self.sender='favorites'
-           self["Key_yellow"]=Label("Delete")
+           self["Key_yellow"]=Label(_("Delete"))
            
            
            
@@ -454,7 +454,7 @@ class MainScreen(Screen):
         else:
         
                         
-            self["Key_yellow"]=Label("+Favorite")
+            self["Key_yellow"]=Label(_("+Favorite"))
         
        
 
@@ -469,11 +469,11 @@ class MainScreen(Screen):
         self.download=False
         
         ##
-        self['actions'] = ActionMap(['ColorActions','OkCancelActions',
+        self['actions'] = ActionMap(['TuneinRadioActions','ColorActions','OkCancelActions',
          'DirectionActions',
          'MovieSelectionActions','MenuActions',"EPGSelectActions",'WizardActions','PiPSetupActions'], {"red":self.closeall,			
-         "yellow":self.savetofavorites,
-         "blue":self.startdownload,
+         "addfav":self.savetofavorites,
+         "blue":self.export2bq,
          "green":self.search ,#self.addfavorite,
          "ok": self.ok_clicked,         
          'cancel': self.exit,
@@ -574,7 +574,7 @@ class MainScreen(Screen):
                
                  self.keyLocked=False
                  self.stopSpinner()
-                 self['handlung'].setText(str(result))  
+                 self['handlung'].setText(_(str(result)))  
                  pass
               if result.startswith("Complete"):
                  self.keyLocked=False
@@ -598,7 +598,7 @@ class MainScreen(Screen):
         except:pass
 
         
-        self['handlung'].setText("Please wait.. ")
+        self['handlung'].setText(_("Please wait.. "))
                
         try:
             self.timer_connect=self.timer.timeout.connect(self.startloaddata)
@@ -610,11 +610,13 @@ class MainScreen(Screen):
         self.data=[]
         
         if self.param_title.lower()=='favorites':
-                from .lib.tsfavorites import getfav_datalist
-                self.data=getfav_datalist('radio/TuneinRadio','favorites')     
+
+                from Plugins.Extensions.TuneinRadio.lib.tsfavorites import readfav
+                self.data = readfav(mode='GFavorites', addon_id='radio/TuneinRadio', section='radio')
+            
                 
         
-                self["Key_yellow"].setText("Remove")
+                self["Key_yellow"].setText(_("Remove"))
                 self["Key_blue"].setText("Download")
                 self.bouquet=True
                 self.favmode=True
@@ -626,7 +628,7 @@ class MainScreen(Screen):
                                  #self['handlung'].setText('please wait..')
                                  pass
                                  self.lock=True
-                                 self['handlung'].setText('Please wait..') 
+                                 self['handlung'].setText(_('Please wait..')) 
                                  
                                  
                                  
@@ -639,15 +641,18 @@ class MainScreen(Screen):
 
             print 'self.source_data',self.source_data 
             self.data=self.source_data#process_request(self.action_params)
-            self["Key_yellow"].setText(" + Favorite")
+            self["Key_yellow"].setText(_(" + Favorite"))
                                      
         try:self.totalresults=len(self.data)         
         except:self.totalresults=0         
         if self.data is None or len(self.data)<1 :
            if self.data is None:
               self.data=[]
-                                               
-           self.data.append(("Error:no result founds",'',1,PLUGIN_PATH+'/skin/images/error.png','','',9,'',1))  
+           if self.favmode==False:
+               
+              self.data.append(("Error:no result founds",'',1,PLUGIN_PATH+'/skin/images/error.png','','',9,'',1))
+           else:
+             self['handlung'].setText(_('Favorites is empty'))   
 	   self.totalresults=1 
         if len(self.data)==1 and (self.data[0][0].startswith("Error") or self.data[0][0].startswith("Message")):
            name=self.data[0][0]
@@ -709,12 +714,15 @@ class MainScreen(Screen):
                        
         
         self.maxentry = len(self.filelist) - 1
+
         self.index =0# lastindex - self.dirlistcount
         
         
         
     def startloaddata(self):
         self.datalist()
+
+                  
         self.setPicloadConf()
     def setPicloadConf(self):
         sc = getScale()
@@ -866,35 +874,35 @@ class MainScreen(Screen):
        except:pass
        if param is not None and  param.startswith("http"):
              self.bouquet=True
-             self['Key_blue'].setText("Download")
-             #self['Key_blue'].show()
+             self['Key_blue'].setText("+Bouquet")
+             self['Key_blue'].show()
                            
        else:
            
              self.bouquet=False
-             #self['Key_blue'].hide()       
+             self['Key_blue'].hide()       
       
        if self.data is None or len(self.data)<1 :
-          self['handlung'].setText("No items available ")
+          self['handlung'].setText(_("No items available "))
           
           return
        
        if len(self.data)==0 and self.data[0][0].startswith('Error') :
-          self['handlung'].setText("Error :check details by info button")
+          self['handlung'].setText(_("Error :check details by info button"))
           
           return
        elif len(self.data)==0 and self.data[0][0].startswith('Message:'):    
-            self['handlung'].setText(str(self.data[0][0]))
+            self['handlung'].setText(_(str(self.data[0][0])))
             return
        if self.bqupdate==True:
           title="Bouquets updated successfully"
           
-          self['handlung'].setText(str(title))
+          self['handlung'].setText(_(str(title)))
           self.closeall()
           return
        try:title=title.encode('utf-8', 'ignore')
        except:pass        
-       self['handlung'].setText(str(title))
+       self['handlung'].setText(_(str(title)))
       
        
     def previouspage(self):
@@ -1064,80 +1072,60 @@ class MainScreen(Screen):
 
         
 
-    def delfav(self):
-      
-       try:
-         title=self.data[self.index][0]
-         fav_id=self.data[self.index][4]
-       except:
-         
-         self['handlung'].setText('Failed to delete from favorites-1')
-         return
-                   
-               
-          
-       if self.param_title=='Favorites':
-          plugin_id=self.addon_id
-          section=self.section
-       
-                 
-       from .lib.tsfavorites import delfavorite
+
         
-       
-       result=delfavorite(title,None)
-       if result==True:
-           
-           
+    def delfav(self):
+        try:
+            title = self.data[self.index][0]
+            url = self.data[self.index][1]
+        except:
+            self['handlung'].setText(_('Failed to delete from favorites-1'))
+            return
 
-           
-                
-           from .lib.tsfavorites import getfav_datalist
-           self.source_data=getfav_datalist("radio/TuneinRadio",'radio')
-           
-           self.loaddata()
-           self['handlung'].setText('Item deleted successfully from favorites')                    
-
-       
-           
-       else:
-           self['handlung'].setText('Failed to delete from favorites') 
-       #
-    def savetofavorites(self):
-         
-           
-           self.bqupdate=False 
-           if self.favmode==True:
-              self.delfav()
-              return
+        from Plugins.Extensions.TuneinRadio.lib.tsfavorites import delfavorite
+        result = delfavorite(title, url)
+        if result == True:
+            from Plugins.Extensions.TuneinRadio.lib.tsfavorites import readfav
+            self.source_data = readfav(mode='GFavorites', addon_id='radio/TuneinRadio', section='radio')
+            self.index = self.index - 1
+            self.loaddata()
             
-           from .lib.tsfavorites import addfavorite,favexists
-
-           
-           import sys
-           result=False
-           try:
-              param=str(self.data[self.index][1])
-
-              title=str(self.data[self.index][0])             
-             
-              if favexists(title,param):
-                  print "favexists",favexists
-                  self['handlung'].setText('Item already in favorites.')
-                  return              
-              result=addfavorite("radio/TuneinRadio",title,param,'radio')
-             
-           except:
-               result=False
-              
-           if result==True:
-               self['handlung'].setText('Item added successfully to favorites.')
-           else:
-               self['handlung'].setText('Failed to add to favorites.')
+            self['handlung'].setText(_('Item deleted successfully from favorites'))
+        else:
+            self['handlung'].setText(_('Failed to delete from favorites'))
 
 
+    def savetofavorites(self):
+        if self.keyLocked == True:
+            return
+        
+        self.bqupdate=False 
+        if self.favmode:
+            self.delfav()
+            return
+        from Plugins.Extensions.TuneinRadio.lib.tsfavorites import addfavorite
+        import sys
+        result = False
+        if True:
+            param = str(self.data[self.index][1])
+            title = str(self.data[self.index][0])
+            try:
+                picture = str(self.data[self.index][2])
+            except:
+                picture = PLUGIN_PATH + '/addons/radio/TuneinRadio/icon.png'
+
+            url = param
+            title = title
+            pic = picture
+            success, error = addfavorite("TuneinRadio", title, param, picture, 'radio')
+            if success == True:
+                self['handlung'].setText(_('Item added successfully to favorites.'))
+            elif success == False:
+                self['handlung'].setText(_('Item is already in favorites'))
+            else:
+                self['handlung'].setText(_(error))
 
 
-              
              
           
             
@@ -1204,12 +1192,17 @@ class MainScreen(Screen):
             except:continue
             try:param=str(item[1])
             except:continue
-            try:image=self.piclist[i]
-            except:image="TuneinRadio.png"
+            try:
+                        webpic=item[2]
+                        webpic_base=os.path.basename(webpic)
+                        image="/tmp/TuneinRadio/pics/"+webpic_base
+                
+            except:
+                image='/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/micons/TuneinRadio.png'
             
-            self.favplaylist.append((title,param,image))
+            self.favplaylist.append((title,param,str(image)))
             
-            playlist.append((title,param,image))
+            playlist.append((title,param,str(image)))
             i=i+1
         print "playlistmain",playlist 
         return playlist        
@@ -1219,50 +1212,54 @@ class MainScreen(Screen):
 
   
   
-    def exportchannels(self):
 
-              
-             
-            
-          itemtitle=str(self.data[self.index][0])
+    def export2bq(self):
+
+         
           
           
-          if self.bouquet==False:
-             
-             return
-          try:
+        if self.bouquet==False:
+         
+            return
+  
             
             
-	    try:channelname = str(self.data[self.index][0])
-	    except:self['handlung'].setText("Failed to export to bouquet[erro:601]")
+        try:
+            channelname = str(self.data[self.index][0])
+        except:
+            self['handlung'].setText(_("Failed to export to bouquet[erro:601]"))
+            return
 
-	    try:
-               url = str(self.data[self.index][1])
-            except:
-               self['handlung'].setText("Failed to export to bouquet[erro:602]")
-               return 
-            if url is not None and not url.startswith("http"):
-               
-               return
-            from Plugins.Extensions.TuneinRadio.lib.TuneinRadiofunctions import addstream   
-            error=addstream(url,channelname,'PRO HD IPTV') 
-            if error=='none':
-               self['handlung'].setText('Stream added to '+'Pro HD IPTV '+ 'bouquet\please wait loading bouquets''')
-               eDVBDB.getInstance().reloadServicelist()
-               eDVBDB.getInstance().reloadBouquets()
-               self['handlung'].setText('Stream added successfully to '+'Pro HD IPTV ')
-               return               
+        try:
+           url = str(self.data[self.index][1])
+        except:
+           self['handlung'].setText("Failed to export to bouquet[erro:602]")
+           return 
+        if True:
+            
+            from Plugins.Extensions.TuneinRadio.lib.pltools import addstream   
+            error = addstream(url, channelname, 'TuneinRadio')
+            if error == 'none':
+                self['handlung'].setText('Stream added to ' + 'radio TuneinRadio bouquet' )
+
+                eDVBDB.getInstance().reloadServicelist()
+                eDVBDB.getInstance().reloadBouquets()
+                
             else:
-               self['handlung'].setText(str(error))
-          except:
-               self['handlung'].setText('Failed to add to bouquets[erro:604]')                                 
-    
+                self['handlung'].setText(error)
+        else:
+            self['handlung'].setText('Failed to add to bouquets')
+       
+
+
+
+
 
         
     def newscreen(self,params):
        try:self.timer.stop()
        except:pass    
-       self['handlung'].setText("Please wait.. ")
+       self['handlung'].setText(_("Please wait.. "))
        self.loadscreen()        
 
     def begindownload(self,name,param):
@@ -1306,12 +1303,12 @@ class MainScreen(Screen):
 
                       from .lib.TSplayer import TSRadioplayer
 
-                      print "selfplaylistmain",self.playlist
+                      log("selfplaylistmain",self.playlist)
                       self.session.openWithCallback(self.updateindex,TSRadioplayer, serviceRef=None,serviceUrl=str(param),serviceName=name,serviceIcon='', playlist = self.playlist, playindex =self.index,process_item=self.process_item)    			
-	              self['handlung'].setText(str(name))
+	              self['handlung'].setText(_(str(name)))
                       return                
           if name is not None and  name.startswith("Error"):
-             self['handlung'].setText('Error:,check /tmp/TuneinRadio_log for more details 1')
+             self['handlung'].setText(_('Error:,check /tmp/TuneinRadio_log for more details 1'))
              self.lock=False
              self.keyLocked=False
              
@@ -1319,13 +1316,13 @@ class MainScreen(Screen):
           elif name is not None  and name.startswith("Message"):
                try:name=name.encode('utf-8', 'ignore')
                except:pass
-               self['handlung'].setText(str(name))
+               self['handlung'].setText(_(str(name)))
 
                self.lock=False
                self.keyLocked=False               
                return
           elif name is None:
-              self['handlung'].setText('Error:,no data,check /tmp/TuneinRadio_log for more details 1')
+              self['handlung'].setText(_('Error:,no data,check /tmp/TuneinRadio_log for more details 1'))
               self.lock=False
               self.keyLocked=False               
               return
@@ -1362,7 +1359,7 @@ class MainScreen(Screen):
                       self.session.openWithCallback(self.updateindex,TSRadioplayer, serviceRef=None,serviceUrl=str(param),serviceName=name,serviceIcon='', playlist = self.playlist, playindex =self.index,process_item=self.process_item)    			
                       try:name=name.encode('utf-8', 'ignore')
                       except:pass
-	              self['handlung'].setText(str(name))                   
+	              self['handlung'].setText(_(str(name)))                   
 
                   
                   else:
@@ -1371,13 +1368,13 @@ class MainScreen(Screen):
                       self.session.openWithCallback(self.updateinfo,MainScreen,info=self.info,action_params=param,source_data=self.source_data,nextrun=self.nextrun+1,screens=self.screens)
                else:
                   if 'Message:' in param:
-                     self['handlung'].setText( str(param))
+                     self['handlung'].setText(_( str(param)))
                   else:   
-                     self['handlung'].setText('Error:,check /tmp/TuneinRadio_log for more details 1')      
+                     self['handlung'].setText(_('Error:,check /tmp/TuneinRadio_log for more details 1'))      
            else:
-                  self['handlung'].setText('No data returned,check /tmp/TuneinRadio_log for more details 2')
+                  self['handlung'].setText(_('No data returned,check /tmp/TuneinRadio_log for more details 2'))
        else:
-                  self['handlung'].setText('No data returned,check /tmp/TuneinRadio_log for more details 3')
+                  self['handlung'].setText(_('No data returned,check /tmp/TuneinRadio_log for more details 3'))
                   self.index=self.preindex 
     def process_item(self,param,playindex):
            
@@ -1418,13 +1415,7 @@ class MainScreen(Screen):
                      try:self.timer3.stop()
                      except:pass
                      try:
-                                 #if config.TSmedia.textinput.value=='virtual':
-                                           #from Plugins.Extensions.TSmedia.resources.VirtualKeyBoard import VirtualKeyBoard
-                                           
-                                        
-                                 #elif  config.TSmedia.textinput.value=='nosms':         
-                                      #from Plugins.Extensions.TSmedia.resources.defaultVirtualKeyBoard import VirtualKeyBoard
-                                 #else:
+                                 
                                        from Screens.VirtualKeyBoard import VirtualKeyBoard              
                             
                      except:
@@ -1455,16 +1446,17 @@ class MainScreen(Screen):
                file.close()
                                  
                #self['handlung'].setText('please wait..')
-               self['handlung'].setText('Please wait..')
+               self['handlung'].setText(_('Please wait..'))
                
                self.searchtxt=search_txt
                self.loaddata()
                return
               
 	     else:
-               self['handlung'].setText("Error in searching for "+str(search_txt))
+               self['handlung'].setText(_("Error in searching for "+str(search_txt)))
 	
-
+          else:
+            self['handlung'].setText(" ")
 
           
 def removeFiles(folder_path):

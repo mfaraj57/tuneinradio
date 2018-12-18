@@ -13,7 +13,7 @@ from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixm
 from Components.Label import Label
 from Tools.LoadPixmap import LoadPixmap
 from Components.ConfigList import ConfigList, ConfigListScreen
-from  .lib.pltools import getversioninfo, gethostname, log
+from  .lib.pltools import getversioninfo, gethostname, log,dellog
 currversion, enigmaos, currpackage, currbuild = getversioninfo('TuneinRadio')
 PLUGIN_PATH = '/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio'
 swidth = getDesktop(0).size().width()
@@ -43,7 +43,7 @@ class StartMenuscrn(Screen):
         skin = '''<screen  name="StartMenuscrn" position="center,center" size="900,550" title=""  flags="wfNoBorder" >
                 <ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/logo.png" position="0,0" size="900,550" transparent="1"/>	
 
-
+                <ePixmap pixmap="/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/menu.png" position="20,580" size="25,25" transparent="1"/>	
 		<widget name="list" position="10,20" size="280,440" scrollbarMode="showOnDemand" itemHeight="110" transparent="1" zPosition="2" />
 	        
                  
@@ -80,22 +80,23 @@ class StartMenuscrn(Screen):
             try:
                 new_version=updateinfo.split("_")[2]
                 currversion=updateinfo.split("_")[0]
-                updatetxt="New version "+str(new_version) +" is available press blue to upgrade."
+                updatetxt="New version "+str(new_version) +" is available press about button to upgrade."
             except:
                 new_version=''
                 updatetxt=''
                 currversion=''
         if not updatetxt=='':
-           self['info'] = Label(updatetxt)
+           self['info'] = Label(_(updatetxt))
         else:   
-           self['info'] = Label('Version: '+currversion)
+           self['info'] = Label(_('Version: '+currversion))
         
         self.list = []
         self['list'] = MenuList([], True, eListboxPythonMultiContent)
         self.addon = 'emu'
         self.icount = 0
         self.downloading = False
-        self['actions'] = ActionMap(['SetupActions', 'ColorActions'], {'ok': self.okClicked,
+        self['actions'] = ActionMap(['SetupActions', 'ColorActions','MenuActions'], {'ok': self.okClicked,
+            'menu':self.showdownloadmenu,                                                                         
             'cancel': self.close}, -2)
         self.ListToMulticontent()
 
@@ -123,11 +124,15 @@ class StartMenuscrn(Screen):
         
 
   
-
+    def showdownloadmenu(self):
+        from Plugins.Extensions.TuneinRadio.lib.download import TuneinRadiodownload
+        self.session.open(TuneinRadiodownload,menu=True)
+        
     def okClicked(self):
 
         idx=self['list'].getSelectedIndex()
         sel = self.data[idx][0]
+        dellog()
         if True:
             if sel == 'favorites':
                     self.section = 'radio'
