@@ -5,13 +5,14 @@ import os, re
 from twisted.web.client import downloadPage, getPage, error
 from Screens.InfoBarGenerics import *
 from Components.Pixmap import MovingPixmap, Pixmap
-from enigma import eServiceReference, iServiceInformation, iPlayableService, getDesktop, gPixmapPtr,ePicLoad
+from enigma import eServiceReference, iServiceInformation, iPlayableService, getDesktop, gPixmapPtr,ePicLoad,eDVBDB
 from Components.ServiceEventTracker import ServiceEventTracker, InfoBarBase
 from Components.AVSwitch import AVSwitch
 from ServiceReference import ServiceReference
 from Screens.PVRState import PVRState, TimeshiftState
 from Tools.Directories import copyfile
 from skin import parseColor
+
 plugin_path = '/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio'
 PLUGIN_PATH ='/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio'
 hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -44,7 +45,7 @@ def getrandom(cmax = 10, list1 = []):
     return rand
 
 
-from .pltools import log
+from .pltools import log,addstream
 
 class StatusScreen(Screen):
 
@@ -188,7 +189,7 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
         self.serviceUrl = serviceUrl
         self.serviceIcon = serviceIcon
         self.onPlayStateChanged = []
-        
+        self.myphotos=False
         self.pvrStateDialog = self.session.instantiateDialog(PVRState)
         try:
             self.lastservice = self.session.nav.getCurrentlyPlayingServiceReference()
@@ -219,15 +220,16 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
          'NumberActions'], {'leavePlayer': self.leavePlayer,
          'info': self.openinfo,         
          'back': self.leavePlayer,
+         'instantRecord': self.startdownload,                   
          'left': self.seekBack1,
          'down': self.showplaylistdown,
          'up': self.showplaylistup,
          'blue': self.seekFwdManual,
-         'yellow':self.addfav,                   
+         #'yellow':self.addfav,                   
          '0': self.resumeplay,
-         #'8': self.hideinfobar,                   
-         #'size-': self.av,
-         #'size+': self.av,
+         '5': self.export2bq,                   
+         #'size-': self.export2bq,
+         #'size+': self.addfav,
          'right': self.seekFwd1}, -1)
         try:
             self.init_aspect = int(self.getAspect())
@@ -242,6 +244,7 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
         self['radio_icon']=Pixmap()
         InfoBarAudioSelection.__init__(self)
         self.shown = False
+        
         self.playstopped=False
         InfoBarSeek.__init__(self)
         
@@ -249,7 +252,38 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
         self.onLayoutFinish.append(self.setTitle)
         self.stimer=eTimer()
         return
- 
+
+    def export2bq(self):
+
+        try:
+            itemtitle, url = getserviceinfo(self.serviceRef)
+        except:
+            return
+
+        if True:
+            channelname = itemtitle
+            error = addstream(url, channelname, 'TuneinRadio')
+            if error == 'none':
+                self['programm'].setText('Stream added to ' + 'radio TuneinRadio bouquet' )
+
+                eDVBDB.getInstance().reloadServicelist()
+                eDVBDB.getInstance().reloadBouquets()
+                
+            else:
+                self['programm'].setText(error)
+        else:
+            self['programm'].setText('Failed to add to bouquets')
+       
+
+        
+    def lockshow(self):
+        return
+    def startdownload(self):
+        servicename, serviceurl = getserviceinfo(self.serviceRef)
+        
+        from Plugins.Extensions.TuneinRadio.lib.download import TuneinRadiodownload
+        self.session.open(TuneinRadiodownload, serviceurl, servicename)
+        
     def hideinfobar(self):
         self.hide()
     def setTitle(self):
@@ -257,30 +291,44 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
         #self['plugin_icon'].instance.setPixmapFromFile(cover)
         
         self.playService()
-        
+    def lockShow(self):
+        return        
     def unlockShow(self):
         return
-    def addfav(self):
-        
-        from .tsfavorites import addfavorite,favexists
-        result = False
-        try:
-            param = str(self.serviceUrl)
-            title = str(self.serviceName)
-            if favexists(title,param):
-               self['programm'].setText('Channel already added to favorites.')
-               
-               return
-               
-            result = addfavorite('radio/TuneinRadio', title, param, 'radio')
-        except:
-            result = False
 
-        if result == True:
-            self['programm'].setText(title + ' added successfully to favorites.')
-        else:
-            self['programm'].setText('Failed to add to favorites.')
+    def addfav(self):
+    
         
+       
+        from Plugins.Extensions.TuneinRadio.lib.tsfavorites import addfavorite
+        try:
+            itemtitle, url = getserviceinfo(self.serviceRef)
+        except:
+            return
+
+        if True:
+            param = str(url)
+            title = str(itemtitle)
+            try:
+                picture = self.playlist[self.playindex][2]
+            except:
+                picture = plugin_path + '/skin/micons/TuneinRadio.png'
+
+            url = param
+            title = title
+            pic = picture
+            success, error = addfavorite("TuneinRadio", title, param, picture, 'radio')
+            if success == True:
+                self['programm'].setText(_('Item added successfully to favorites.'))
+            elif success == False:
+                self['programm'].setText(_('Item is already in favorites'))
+            else:
+                self['programm'].setText(_(error))
+
+
+
+    
+
 
 
 
@@ -380,8 +428,12 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
         log("localpic",localpic)
         #localpic="/tmp/cover.jpg"
         localpic= self.playlist[self.playindex][2]
+        log('self.playlist',self.playlist)
+        log('self.playindex',self.playindex)
         print "localpicddd",localpic
-        if fileExists(localpic):
+        if not fileExists(localpic):
+           localpic=plugin_path + '/skin/micons/TuneinRadio.png'
+        if True :   
             try:
                 self['radio_icon'].instance.setPixmap(gPixmapPtr())
                 self.scale = AVSwitch().getFramebufferScale()
@@ -409,7 +461,9 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
         print "localpicxxx",localpic
         from pltools import log
         log("localpic",localpic)
-        localpic="/tmp/cover.jpg"
+        if self.myphotos==False:
+            
+            localpic="/tmp/cover.jpg"
         if fileExists(localpic):
             try:
                 self['cover'].instance.setPixmap(gPixmapPtr())
@@ -440,6 +494,7 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
 
     def _mayShow(self):
         print '244', self.audio
+        return
         if self.audio == True:
             try:
                 p = InfoBarShowHide()
@@ -468,14 +523,14 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
         title = self.playlist[self.playindex][0]
         url = self.playlist[self.playindex][1]
 
-        if  not url.startswith("http"):
-            url,title=self.playitem(url)
-            if url is None or not url.startswith("http"):
-               #self.playindex =preindex
-               url="http://inavlid.link"
-               title=str(title) +':invalid stream link..'
-               self['programm'].setText(str(title) +':invalid stream link..')
-               
+        
+        url,title=self.playitem(url)
+        if False:
+           #self.playindex =preindex
+           url="http://inavlid.link"
+           title=str(title) +':invalid stream link..'
+           self['programm'].setText(str(title) +':invalid stream link..')
+           
         
         self.playService(title=title, url=url)
 
@@ -486,7 +541,7 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
             self.playindex = 0
         title = self.playlist[self.playindex][0]
         url = self.playlist[self.playindex][1]
-        if  not url.startswith("http"):
+        if  False:
             url,title=self.playitem(url)
             if url is None or not url.startswith("http"):
                #self.playindex =preindex
@@ -505,7 +560,7 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
             
             title = self.playlist[self.playindex][0]
             url = self.playlist[self.playindex][1]
-            if  not url.startswith("http"):
+            if  False:
                 url,title=self.playitem(url)
                 if url is None or not url.startswith("http"):
                    #self.playindex =preindex
@@ -589,14 +644,14 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
             else:
                self.serviceName = title 
             print "xxurl",url
-            if url is None or not url.startswith('http') and not url.startswith('rtmp'):
+            if False:
                 
                 
                     self['programm'].setText(title+': invalid stream link1')
                     
                     return
             title=str(title)
-            
+            log("url",url)
             self.serviceRef = eServiceReference(4097, 0, str(url))
             self.serviceRef.setName(title)
             self.session.nav.stopService()
@@ -756,7 +811,20 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
             print "gimage_urlxxx",gimage_url,sTitle
             self.gimage_url=gimage_url
             self.all_images=[]
-            link,self.all_images=getfirst_image(gimage_url,self.imageindex)
+            mypath=os.path.join(str(config.TuneinRadio.downloadlocation.value),"myphotos")
+            if config.TuneinRadio.images_source.value=="myphotos" and os.path.exists(mypath):
+                  
+                  self.all_images=get_myphotos()
+                  if len(self.all_images)> 0:
+                      self.myphotos=True
+                      link=self.all_images[0]
+                  else:
+                      link,self.all_images=getfirst_image(gimage_url,self.imageindex)
+                      self.myphotos=False
+                      
+            else:  
+                link,self.all_images=getfirst_image(gimage_url,self.imageindex)
+                self.myphotos=False
             if link is None:
                 return
             self.ShowCover2(link)
@@ -769,12 +837,18 @@ class TSRadioplayer(Screen, InfoBarBase, InfoBarSeek, InfoBarNotifications,InfoB
     def slideshow(self):
          try:
             self.imageindex=self.imageindex+1
-            
+            if self.imageindex>(len(self.all_images)-1):
+               self.imageindex=0 
             link=self.all_images[self.imageindex]
             self.ShowCover2(link)
          except:
              pass
     def ShowCover2(self, imagedata):
+        if self.myphotos==True:
+           self.ShowCover3(imagedata)
+           return
+
+            
         if imagedata:
             
             
@@ -816,6 +890,22 @@ def read_url(site):
 
     content = page.read()
     return content
+def get_myphotos():
+    mypath=os.path.join(config.TuneinRadio.downloadlocation.value,"myphotos")
+    list1 = []
+    if os.path.exists(mypath):
+        for x in os.listdir(mypath):
+            dx=x.lower()
+            if dx.endswith("png") or dx.endswith("jpg"):
+                xpath=os.path.join(mypath,x)
+            
+                list1.append(xpath)
+
+        
+        return list1 
+    else:
+        return []
+
 
        
 def getfirst_image(link,index):

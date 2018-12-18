@@ -1,4 +1,4 @@
-# Embedded file name: /usr/lib/enigma2/python/Plugins/Extensions/AliSatSettings/resources/tsdownload.py
+# Embedded file name: /usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/lib/tsdownload.py
 from Components.AVSwitch import AVSwitch
 from Components.ActionMap import ActionMap
 from Components.Button import Button
@@ -44,11 +44,13 @@ from xml.etree.cElementTree import fromstring as cet_fromstring
 from StringIO import StringIO
 from urllib import FancyURLopener
 total = 0
-dlocation = '/media/hdd/'#config.plugins.AliSatSettings2.Downloadlocation.value
+dlocation = config.TuneinRadio.downloadlocation.value
 if not dlocation.endswith("/"):
    dlocation=dlocation+"/"
-#from Plugins.Extensions.AliSatSettings.resources.functions import getenigmaos
+httpstop_file="/tmp/httpstop"   
+#from Plugins.Extensions.TuneinRadio.resources.functions import getenigmaos
 #enigmaos=getenigmaos()
+from pltools import log
 enigmaos='oe2.0'   
 def freespace():
          downloadlocation=dlocation
@@ -243,20 +245,43 @@ class downloadTask(Task):
         self.end = 100
         self.url = url
         self.local = file
-
+        self.download=None
+        self.timer3=eTimer()
+        try:
+             self.timer3_connect=self.timer3.timeout.connect(self.checkprogress)
+        except:
+             self.timer3.callback.append(self.checkprogress)
+        self.timer3.start(200, False)             
+          
+    def checkprogress(self):
+        
+        totalbytes =100*1048576.0
+        try:recvbytes=2048576.0+os.path.getsize(self.local)
+        except:recvbytes=0
+        self.http_progress(recvbytes,totalbytes) 
     def prepare(self):
         self.error = None
         return
 
     def run(self, callback):
+        if os.path.exists(httpstop_file):
+           os.remove(httpstop_file)
         self.callback = callback
         getsize(self.url)
         self.download = downloadWithProgress(self.url, self.local)
         self.download.addProgress(self.http_progress)
-        print "self.url, self.local",self.url, self.local
+       
         self.download.start().addCallback(self.http_finished).addErrback(self.http_failed)
 
     def http_progress(self, recvbytes, totalbytes):
+       
+        if os.path.exists(httpstop_file) or round(float(totalbytes / 1048576.0))>100:
+           
+           if self.download:
+              self.download.stop()
+           self.timer3.stop()
+           return
+        
         currd = round(float(recvbytes / 1048576.0), 2)
         totald = round(float(totalbytes / 1048576.0), 1)
         info = _('%d of %d MB' % (currd, totald))
@@ -272,16 +297,8 @@ class downloadTask(Task):
             filetitle = os_path.basename(self.local)
         except:
             filetile = ''
-        if not '_update.zip'  in self.local:
-           
-           try:Notifications.AddNotification(MessageBox, _(filetitle+' successfully transfered to your HDD!'), MessageBox.TYPE_INFO, timeout=10)
-           except:pass
-        if '_plugin.' in self.local or '_update.zip' in self.local:
-            self.deflatezip(self.local)
-            return
-       
-        if self.local.endswith(".zip") and not "-et" in self.local and "-vu" not in self.local:
-           self.deflatezip(self.local)
+
+
 
     def http_failed(self, failure_instance = None, error_message = ''):
         if error_message == '' and failure_instance is not None:
@@ -292,52 +309,10 @@ class downloadTask(Task):
                 filetitle = os_path.basename(self.local)
             except:
                 filetile = ''
-        if  '_update.zip'  in self.local:
-          return 
-        try:Notifications.AddNotification(MessageBox, _('Failed to download '+filetitle), MessageBox.TYPE_INFO, timeout=10)
-        except:pass
-        return
 
 
 
-    def deflatezip(self, filename):
-        self.container = eConsoleAppContainer()
-        if '_update.zip' in filename:
-           self.destination="/"
-        else:   
-           self.destination = os.path.split(filename)[0]
-        
-        print "filenamets",filename
-        fname=filename.replace('.zip', '')
-        print "fnamets2",fname        
-        cmd = "echo 'Configuring %s...' >> /tmp/ipkinstall.log" % fname
-        cmd = cmd + '; unzip -o ' + filename + ' -d ' + self.destination + '  >> /tmp/filestall.log'
 
-        if enigmaos=='oe2.0':
-               self.container.appClosed.append(self.deflateOnClosed)
-        else:    
-              self.container_closed =self.container.appClosed.connect(self.deflateOnClosed)        
-        
-        self.container.execute(cmd)        
-        
-        info = 'Installing to root...'
-
-    def deflateOnClosed(self, result):
-        print 'result292', result
-        try:
-          if '_update.zip' in self.local:
-              os.remove(self.local)
-              return
-          zipfilesize=  os.path.getsize(self.local)
-          nfifilesize=os.path.getsize(self.local.replace(".zip",".nfi"))
-          print 'zipfilesize,nfifilesize',zipfilesize,nfifilesize
-         
-          if nfifilesize==zipfilesize or nfifilesize > zipfilesize:
-             os.remove(self.local)
-             
-        except:
-           pass
-           #Notifications.AddNotification(MessageBox, _('File successfully unzipeed to your HDD,you can flash your receiver now!'), MessageBox.TYPE_INFO, timeout=10)
 
     def afterRun(self):
         
@@ -346,7 +321,7 @@ class downloadTask(Task):
             Notifications.AddNotification(MessageBox, _(self.local+' successfully transfered to your HDD!'), MessageBox.TYPE_INFO, timeout=10)
 
 
-PLUGIN_PATH = '/usr/lib/enigma2/python/Plugins/Extensions/AliSatSettings'
+PLUGIN_PATH = '/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio'
 
 class downloadTasksScreen(Screen):
     skin='''               <screen name="downloadTasksScreen" position="center,center" size="1070,580" backgroundColor="#00060606" >	
@@ -367,15 +342,15 @@ class downloadTasksScreen(Screen):
 				</convert>
 			</widget>
 			
-		<ePixmap position="79,521" size="25,25" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/AliSatSettings/skin/images/red.png"  zPosition="3" transparent="1" alphatest="blend" />	
-		<ePixmap position="283,521" size="25,25" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/AliSatSettings/skin/images/green.png"    zPosition="3" transparent="1" alphatest="blend" />                
-		<ePixmap position="483,521" size="25,25" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/AliSatSettings/skin/images/blue.png"    zPosition="3" transparent="1" alphatest="blend" /> 
+		<ePixmap position="79,521" size="25,25" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/red.png"  zPosition="3" transparent="1" alphatest="blend" />	
+		<ePixmap position="283,521" size="25,25" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/green.png"    zPosition="3" transparent="1" alphatest="blend" />                
+		<ePixmap position="483,521" size="25,25" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/blue.png"    zPosition="3" transparent="1" alphatest="blend" /> 
                 <eLabel position="86,523" zPosition="4" size="200,24" halign="center" font="Regular;22" transparent="1" foregroundColor="#ffffff" backgroundColor="#41000000" text="Stop" />
-		<eLabel position="295,523" zPosition="4" size="200,24" halign="center" font="Regular;22" transparent="1" foregroundColor="#ffffff" backgroundColor="#41000000" text=" " />
-                <eLabel position="504,523" zPosition="4" size="200,24" halign="center" font="Regular;22" transparent="1" foregroundColor="#ffffff" backgroundColor="#41000000" text="Local images" />
-        	<ePixmap position="75,514" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/AliSatSettings/skin/images/tab_active.png" size="204,37" zPosition="2" backgroundColor="#ffffff" alphatest="blend" />
-		<ePixmap position="279,514" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/AliSatSettings/skin/images/tab_active.png" size="204,37" zPosition="2" backgroundColor="#ffffff" alphatest="blend" />
-		<ePixmap position="484,514" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/AliSatSettings/skin/images/tab_active.png" size="204,37" zPosition="2" backgroundColor="#ffffff" alphatest="blend" />
+		<eLabel position="295,523" zPosition="4" size="200,24" halign="center" font="Regular;22" transparent="1" foregroundColor="#ffffff" backgroundColor="#41000000" text="Play" />
+                <eLabel position="504,523" zPosition="4" size="200,24" halign="center" font="Regular;22" transparent="1" foregroundColor="#ffffff" backgroundColor="#41000000" text="Downloads" />
+        	<ePixmap position="75,514" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/tab_active.png" size="204,37" zPosition="2" backgroundColor="#ffffff" alphatest="blend" />
+		<ePixmap position="279,514" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/tab_active.png" size="204,37" zPosition="2" backgroundColor="#ffffff" alphatest="blend" />
+		<ePixmap position="484,514" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/tab_active.png" size="204,37" zPosition="2" backgroundColor="#ffffff" alphatest="blend" />
                       
                 </screen>'''
     def __init__(self, session, plugin_path, tasklist, filename = None):
@@ -392,12 +367,14 @@ class downloadTasksScreen(Screen):
          'ShortcutActions',
          'WizardActions',
          'MediaPlayerActions'], {'blue': self.showfiles,
+         'green': self.play,
          'ok': self.keyOK,         
          'back': self.keyCancel,
-         'red': self.keyOK}, -1)
+         'red': self.abort}, -1)
         self['title'] = Label()
         self.onLayoutFinish.append(self.layoutFinished)
         self.onShown.append(self.setWindowTitle)
+        self['tasklist'].onSelectionChanged.append(self.selectionChanged)
         self.onClose.append(self.__onClose)
         self.Timer = eTimer()
         
@@ -405,7 +382,9 @@ class downloadTasksScreen(Screen):
                self.Timer.callback.append(self.TimerFire)
         else:    
                self.timer_connect=self.Timer.timeout.connect(self.TimerFire)
-
+    def selectionChanged(self):
+        self.Timer.stop()
+        self.Timer.startLongTimer(15)
     def play(self):
         try:
             current = self['tasklist'].getCurrent()
@@ -422,29 +401,21 @@ class downloadTasksScreen(Screen):
             except:
                 return
 
-            dlocation = config.plugins.tstube.downloadlocation.value + '/'
+            dlocation = config.TuneinRadio.downloadlocation.value + '/'
             filename = str(dlocation + title)
             print "filenamexx",filename
             sref = eServiceReference(4097, 0, filename)
             sref.setName(title)
             if sref is not None:
-                from TSMplayer4 import TSMplayer4
-                try:
-                    player = config.TSmedia.mediaplayer.value
-                except:
-                    player = 'TSMplayer'
-
-                if player == 'TSMplayer':
-                    self.session.open(TSMplayer4, sref=sref, addon_params={}, plugin_id='plugin.program.filesexplorer', playlist=[], playindex=0, playall=False, noexit=True, referer='filesexplorer', serviceName=title, audio=False, mode='appversion4')
-                else:
-                    from Screens.InfoBar import MoviePlayer
-                    self.session.open(MoviePlayer, sref)
-            return
-            return
+                from TSplayer import TSRadioplayer
+                
+                                                 #serviceRef = None, serviceUrl = '', serviceName = '', serviceIcon = '', playlist = [], playindex = 0,process_item=None
+                self.session.open(TSRadioplayer, serviceRef=sref, serviceUrl = filename, serviceIcon = '', playlist=[], playindex=0, playall=False, noexit=True, referer='filesexplorer', serviceName=title, audio=True, mode='appversion4')
+                
 
     def showfiles(self):
-                from Plugins.Extensions.AliSatSettings.main import AliSatSettingsFilesScreen
-                self.session.open(AliSatSettingsFilesScreen)
+                from Plugins.Extensions.TuneinRadio.lib.filesexplorer import TuneinRadioFiles
+                self.session.open(TuneinRadioFiles)
 
     def __onClose(self):
         del self.Timer
@@ -517,6 +488,56 @@ class downloadTasksScreen(Screen):
             self.job = job
             from TaskView2 import JobViewNew
             self.session.openWithCallback(self.JobViewCB, JobViewNew, job)
+
+    def abort(self):
+
+        current = self['tasklist'].getCurrent()
+        print current
+        if current:
+            job = current[0]
+            
+        else:
+           return
+
+       
+        if job.status == job.NOT_STARTED:
+            job_manager.active_jobs.remove(job)
+            self.rebuildTaskList()
+            
+        elif job.status == job.IN_PROGRESS :
+            from Screens.MessageBox import MessageBox
+            self.jjob=job
+            self.session.openWithCallback(self.stop_job, MessageBox, _('Stop download now.'), MessageBox.TYPE_YESNO)
+        else:
+            pass
+
+    def stop_job(self, result):
+        if result:
+
+            cfile=open(httpstop_file, 'w')
+            cfile.write("stop")
+            cfile.close()
+            log("record","stopped")
+            return
+            downloadfolder = config.TuneinRadio.downloadlocation.value
+            target=os.path.join(downloadfolder,self.jjob.name)
+            #self.jjob.cancel()
+            print '167', self.jjob.name
+            try:
+               from shutil import copyfile
+               ctarget=target.strip()[:-4]+"-c"+".mp3"
+               copyfile(target, ctarget)
+               os.remove(target)
+            
+            except:
+              self.session.open( MessageBox, _('Failed to stop download'), MessageBox.TYPE_ERROR)
+              
+        self.rebuildTaskList()     
+            
+
+
+
+            
 
     def JobViewCB(self, why):
         print 'WHY---', why

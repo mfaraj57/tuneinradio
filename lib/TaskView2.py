@@ -10,7 +10,7 @@ import os
 from enigma import gPixmapPtr, getDesktop
 from Tools import Notifications
 from Components.Pixmap import Pixmap
-THISPLUG = '/usr/lib/enigma2/python/Plugins/Extensions/ImageDownLoader'
+THISPLUG = '/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio'
 
 class JobViewNew(InfoBarNotifications, Screen, ConfigListScreen):
     try:
@@ -152,16 +152,8 @@ class JobViewNew(InfoBarNotifications, Screen, ConfigListScreen):
         if result:
             self.job.cancel()
             print '167', self.job.name
-            downloadfolder = config.plugins.tstube.downloadlocation.value
-            print '168', downloadfolder + '/' + self.job.name
-            try:
-                os.remove(downloadfolder + self.job.name)
-                cmd1 = 'killall -9 rtmpdump'
-                cmd2 = 'killall -9 wget'
-                os.system(cmd1)
-                os.system(cmd2)
-            except:
-                print 'failed to stop download'
+            downloadfolder = config.TuneinRadio.downloadlocation.value
+
 
             self.close(True)
 

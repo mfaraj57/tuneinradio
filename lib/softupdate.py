@@ -62,57 +62,59 @@ class updatesscreen(Screen):##change pngs path
     position = "center,center"
     size = "790,570"
     backgroundColor = "#080000">
-    <ePixmap
-        position = "300,540"
-        size = "25,25"
-        pixmap = "/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/green.png"
-        zPosition = "3"
-        transparent = "1"
-        alphatest = "blend"/>
-    <widget
-        name = "key_green"
-        position = "280,537"
-        zPosition = "4"
-        size = "200,24"
-        halign = "center"
-        font = "Regular;20"
-        transparent = "1"
-        foregroundColor = "#ffffff"
-        backgroundColor = "#41000000"/>
-    <ePixmap
-        position = "280,530"
-        pixmap = "/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/tab_active.png"
-        size = "204,37"
-        zPosition = "2"
-        backgroundColor = "#ffffff"
-        alphatest = "blend"/>
 
-    <ePixmap
-        position = "100,540"
-        size = "25,25"
-        pixmap = "/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/yellow.png"
-        zPosition = "3"
-        transparent = "1"
-        alphatest = "blend"/>
-        
-        
-    <widget
-        name = "key_yellow"
-        position = "130,537"
-        zPosition = "4"
-        size = "200,24"
-        halign = "center"
-        font = "Regular;20"
-        transparent = "1"
-        foregroundColor = "#ffffff"
-        backgroundColor = "#41000000"/>
-    <ePixmap
-        position = "130,530"
-        pixmap = "/usr/lib/enigma2/python/Plugins/Extensions/TuneinRadio/skin/images/tab_active.png"
-        size = "204,37"
-        zPosition = "2"
-        backgroundColor = "#ffffff"
-        alphatest = "blend"/>
+       <ePixmap
+            position = "220,540"
+            size = "25,25"
+            pixmap = "/usr/lib/enigma2/python/Plugins//Extensions/TuneinRadio/skin/images/yellow.png"
+            zPosition = "3"
+            transparent = "1"
+            alphatest = "blend"/>
+        <widget
+            name = "key_yellow"
+            position = "200,537"
+            zPosition = "4"
+            size = "200,24"
+            halign = "center"
+            font = "Regular;20"
+            transparent = "1"
+            foregroundColor = "#ffffff"
+            backgroundColor = "#41000000"/>
+        <ePixmap
+            position = "200,530"
+            pixmap = "/usr/lib/enigma2/python/Plugins//Extensions/TuneinRadio/skin/images/tab_active.png"
+            size = "204,37"
+            zPosition = "2"
+            backgroundColor = "#ffffff"
+            alphatest = "blend"/>
+
+
+            
+        <ePixmap
+            position = "550,540"
+            size = "25,25"
+            pixmap = "/usr/lib/enigma2/python/Plugins//Extensions/TuneinRadio/skin/images/green.png"
+            zPosition = "3"
+            transparent = "1"
+            alphatest = "blend"/>
+        <widget
+            name = "key_green"
+            position = "530,537"
+            zPosition = "4"
+            size = "200,24"
+            halign = "center"
+            font = "Regular;20"
+            transparent = "1"
+            foregroundColor = "#ffffff"
+            backgroundColor = "#41000000"/>
+        <ePixmap
+            position = "530,530"
+            pixmap = "/usr/lib/enigma2/python/Plugins//Extensions/TuneinRadio/skin/images/tab_active.png"
+            size = "204,37"
+            zPosition = "2"
+            backgroundColor = "#ffffff"
+            alphatest = "blend"/>
+       
 
 
         
@@ -222,7 +224,7 @@ class updatesscreen(Screen):##change pngs path
          'yellow': self.showsetup,                                                                 
          'green': self.runsoftupdate}, -1)
         info = 'Checking software updates,please wait...'
-        self['info'] = Label(info)
+        self['info'] = Label(_(info))
         self.onLayoutFinish.append(self.getupgradeinfo)
     def showsetup(self):
         from .PluginSetup import TuneinRadioSetup
@@ -240,7 +242,7 @@ class updatesscreen(Screen):##change pngs path
                 cmdlist.append('unzip -o ' + filename + ' -d ' + '/')
                 cmdlist.append('rm ' + filename)
                 from .Console3 import Console3
-                self.session.open(Console3, title='Installing last update', cmdlist=cmdlist, finishedCallback=None, closeOnSuccess=False, instr=None, endstr=None)
+                self.session.open(Console3, title='_(Installing last update)', cmdlist=cmdlist, finishedCallback=None, closeOnSuccess=False, instr=None, endstr=None)
             return
 
     def getupgradeinfo(self):
@@ -252,23 +254,23 @@ class updatesscreen(Screen):##change pngs path
             self.builddate = builddate
             
             if error == 'error':
-                self['info'].setText('Error in getting updates data,internet or server down,try later')
+                self['info'].setText(_('Error in getting updates data,internet or server down,try later'))
                 return
             currbuild = builddate
             if error == 'error' or updates is None:
-                self['info'].setText('Error getting data,check internet or server down')
+                self['info'].setText(_('Error getting data,check internet or server down'))
                 self['key_green'].setText(' ')
                 self.update = False
                 return
             if updates is None:
-                self['info'].setText('Sorry unable to get updates info,no internet or server down!')
+                self['info'].setText(_('Sorry unable to get updates info,no internet or server down!'))
                 self['key_green'].setText(' ')
                 self.update = False
                 return
             try:
                 allupdates = updates.replace(':', '\n')
             except:
-                self['info'].setText('Sorry unable to get updates info,no internet or server down!')
+                self['info'].setText(_('Sorry unable to get updates info,no internet or server down!'))
                 self['key_green'].setText(' ')
                 self.update = False
                 return
@@ -276,21 +278,21 @@ class updatesscreen(Screen):##change pngs path
             self.link = link
             print 'version,currversion', version, currversion
             if version.strip() == currversion.strip():
-                self['info'].setText('Plugin version: ' + currversion + '\nlast update:' + currbuild + ' Press blue to re-install last update\n\n No new version available\n\npress green button to remove and re-install current version,some addons may need reinstall\n')
+                self['info'].setText(_('Plugin version: ' + currversion + '\nmfaraj57\n\n TuneinRadio is uptodate\n'))
                 self.update = True
                 self.removefirst = True
-                self['key_green'].setText('re-install')
+                self['key_green'].setText(_('re-install'))
                 return
             if float(version) > float(currversion):
-                updatestr = 'Plugin version: ' + currversion + '\n\nNew update ' + version + ' is available  \n updates:' + allupdates + '\n\npress green button to start updating\n'
-                self['key_green'].setText('Upgrade')
+                updatestr = _('Plugin version: ' + currversion + '\n\nNew release ' + version + ' is available  \n updates:' + allupdates )
+                self['key_green'].setText(_('Upgrade'))
                 self.update = True
                 self['info'].setText(updatestr)
             else:
-                self['info'].setText('Plugin version: ' + currversion + '\n\n No new version available\n')
+                self['info'].setText(_('Plugin version: ' + currversion + '\n\n TuneinRadio is uptodate\n'))
         except:
             self.update = False
-            self['info'].setText('unable to check for updates-No internet connection or server down-please check later')
+            self['info'].setText(_('unable to check for updates-No internet connection or server down-please check later'))
 
         return
 
@@ -298,10 +300,13 @@ class updatesscreen(Screen):##change pngs path
         if self.update == False:
             return
         
-        
-        target = '/tmp/updates.ipk'
-        self.session.openWithCallback(self.close, ConsoleUpdateScreen, self.link)
+        cmdlist=[]
+        cmdlist.append('echo upgrade started,please wait....&& wget "http://tunisia-dreambox.info/TSplugins/TuneinRadio/TuneinRadioInstaller.sh" -O - | /bin/sh')
+        from .Console3 import Console3
+        self.session.open(Console3, title=_('Installing last update'), cmdlist=cmdlist, finishedCallback=None, closeOnSuccess=False, instr=None, endstr=None)
+        return
 
+        
 
 class ConsoleUpdateScreen(Screen):##change plugin path
     skin_1280 ='''    <screen
@@ -372,21 +377,19 @@ class ConsoleUpdateScreen(Screen):##change plugin path
     def __onLayoutFinished(self):
         sl = self['tslog']
         sl.instance.setZPosition(1)
-        self['tslog'].setText('Starting update, please wait...')
+        self['tslog'].setText(_('Starting update, please wait...'))
         self.startPluginUpdate()
 
     def startPluginUpdate(self):##change
-        try:
-            downloadurl(str(self.updateurl))
-        except:
-            pass
+       
 
         self.container = eConsoleAppContainer()
         if enigmaos == 'oe2.0':
+           
             self.container.appClosed.append(self.finishedPluginUpdate)
             self.container.stdoutAvail.append(self.mplog)
             ##change plugin path
-            self.container.execute('opkg remove enigma2-plugin-extensions-tuneinradio ; opkg update ; opkg install --force-overwrite --force-depends ' + '/tmp/tmp.pac')
+            self.container.execute('wget "http://tunisia-dreambox.info/TSplugins/TuneinRadio/TuneinRadioInstaller.sh" -O - | /bin/sh')
         else:
             self.container.appClosed_conn = self.container.appClosed.connect(self.finishedPluginUpdate)
             self.container.stdoutAvail_conn = self.container.stdoutAvail.connect(self.mplog)
@@ -400,11 +403,8 @@ class ConsoleUpdateScreen(Screen):##change plugin path
             pass
 
         if retval == 0:
-            self.session.openWithCallback(self.restartGUI, MessageBox, _('Plugin successfully updated!\nDo you want to restart the Enigma2 GUI now?'), MessageBox.TYPE_YESNO)
-        elif retval == 2:
-            self.session.openWithCallback(self.returnGUI, MessageBox, _('Plugin update failed! Please check free space on your root filesystem, at least 6MB are required for installation.\nCheck the update log at tmp/TSmeida!\ntry to install from tools/files/official software'), MessageBox.TYPE_ERROR)
-        else:
-            self.session.openWithCallback(self.returnGUI, MessageBox, _('Plugin update failed! Check tmp/plugin_update_log !'), MessageBox.TYPE_ERROR)
+            self.restartGUI()
+            #self.session.openWithCallback(self.restartGUI, MessageBox, _('Plugin successfully updated!\nDo you want to restart the Enigma2 GUI now?'), MessageBox.TYPE_YESNO)
 
     def restartGUI(self, answer):
         self.finished = True
@@ -422,10 +422,12 @@ class ConsoleUpdateScreen(Screen):##change plugin path
     def returnGUI(self, answer):
         pass
 
-    def mplog(self, str):
-        print 'st', str
-        self['tslog'].setText(str)
-        self.writeToLog(str)
+    def mplog(self, str1):
+        print 'st', str1
+        str2=self['tslog'].getText()
+        str3=str2+"\n"+str1
+        self['tslog'].setText(str3)
+        self.writeToLog(str1)
 
     def writeToLog(self, log):
         global gLogFile

@@ -3,6 +3,17 @@ from Components.ConfigList import ConfigListScreen
 from Screens.Screen import Screen
 from Components.MenuList import MenuList
 from Components.ActionMap import ActionMap, NumberActionMap
+from Screens.MessageBox import MessageBox
+import os
+mountedDevs = []
+try:
+    from Components.Harddisk import harddiskmanager
+    for p in harddiskmanager.getMountedPartitions(True):
+        mountedDevs.append((p.mountpoint, _(p.description) if p.description else ''))
+except:
+    pass
+mounted_string = 'Nothing mounted at '
+
 class TuneinRadioSetup(Screen, ConfigListScreen):
     skin='''<screen
     name = "TuneinRadioSetup"
@@ -87,20 +98,38 @@ class TuneinRadioSetup(Screen, ConfigListScreen):
     def __init__(self, session):
         Screen.__init__(self, session)
         
-        self.list = []
-        
-        self.list.append(getConfigListEntry(_('Show plugin in main menu(need e2 restart):'), config.TuneinRadio.menuplugin))
-        
-
+        self.createSetup()
         ConfigListScreen.__init__(self, self.list, session)
         self['setupActions'] = ActionMap(['SetupActions', 'ColorActions'], {'green': self.keySave,
          'cancel': self.keyClose,
+         'ok': self.ok,                                                                   
          'blue': self.resetdefaults}, -2)
        
+
+    def createSetup(self,result=None):
+
+        self.list = []
+        
+        self.list.append(getConfigListEntry(_('Show plugin in main menu(need e2 restart):'), config.TuneinRadio.menuplugin))
+        self.list.append(getConfigListEntry(_('Download directory # press ok to change:'), config.TuneinRadio.downloadlocation))
+        self.list.append(getConfigListEntry(_('Slide show image source # press ok to change:'), config.TuneinRadio.images_source))
+
+        
+
     def resetdefaults(self):
         pass
 
+    
+    def ok(self):
+        if self['config'].getCurrent()[1] == config.TuneinRadio.downloadlocation:
+            from downloadlocation import TuneinRadiodownloadlocation
+            self.session.openWithCallback(self.createSetup,TuneinRadiodownloadlocation)
+        
 
+    def callbackd(self, result = False):
+        if result:
+            self.createSetup()
+            return
 
     def keySave(self):
        
@@ -108,7 +137,23 @@ class TuneinRadioSetup(Screen, ConfigListScreen):
             x[1].save()
 
         configfile.save()
+
+
+        from .pltools import getmDevices
+        mount_devices=getmDevices()
+        dlocation=config.TuneinRadio.downloadlocation.value
+        foldermounted = self.checkmountDownloadPath(dlocation)
+        if not foldermounted:
+           self.session.open(MessageBox, mounted_string + str(dlocation), MessageBox.TYPE_ERROR,timeout=7)
+            
+        if config.TuneinRadio.images_source.value=="myphotos":        
+           self.session.open( MessageBox, "Put your pictures in directory %s" %config.TuneinRadio.downloadlocation.value+"/myphtos",MessageBox.TYPE_INFO,timeout=7)
+
+
         self.close(True)
+
+
+            
     def restartenigma(self, result):
         if result:
             self.session.open(TryQuitMainloop, 3)
@@ -121,4 +166,42 @@ class TuneinRadioSetup(Screen, ConfigListScreen):
 
         self.close(False)
 
+    def checkmountDownloadPath(self, path):
+        if path is None:
+            self.session.open(MessageBox, _('nothing entered'), MessageBox.TYPE_ERROR)
+            return False
+        else:
+            sp = []
+            sp = path.split('/')
+            print sp
+            if len(sp) > 1:
+                if sp[1] != 'media':
+                   
+                    return False
+            mounted = False
+            self.swappable = False
+            sp2 = []
+            f = open('/proc/mounts', 'r')
+            m = f.readline()
+            while m and not mounted:
+                if m.find('/%s/%s' % (sp[1], sp[2])) is not -1:
+                    mounted = True
+                    print m
+                    sp2 = m.split(' ')
+                    print sp2
+                    if sp2[2].startswith('ext') or sp2[2].endswith('fat'):
+                        print '[stFlash] swappable'
+                        self.swappable = True
+                m = f.readline()
 
+            f.close()
+            if not mounted:
+                
+                return False
+            if os.path.exists(config.TuneinRadio.downloadlocation.value):
+                try:
+                    os.chmod(config.TuneinRadio.downloadlocation.value, 511)
+                except:
+                    pass
+
+            return True
